@@ -1,0 +1,66 @@
+import pandas as pd
+import time
+# Machine Learning
+from sklearn import preprocessing, model_selection, svm
+from sklearn.linear_model import LinearRegression
+dataset= pd.read_csv('Confirmed.csv')
+dataset.info()
+dataset.columns
+import datetime as dt
+dataset['Date'] = pd.to_datetime(dataset['Date'])
+dataset['Date']=dataset['Date'].map(dt.datetime.toordinal)
+dataset
+X= dataset['Date']
+type(X)
+X.shape
+X= X.values.reshape(124,1)
+X
+y= dataset['Confirmed']
+y
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+model = LinearRegression()
+model.fit(X, y)
+plt.plot(X, model.predict(X))
+plt.scatter(X, y)
+plt.title("Linear Model, Polynomial Degree = 1")
+forecast_col = 'Confirmed'
+
+# Chosing 30 days as number of forecast days
+forecast_out = int(30)
+print('length =',len(dataset), "and forecast_out =", forecast_out)
+# Creating label by shifting 'Adj. Close' according to 'forecast_out'
+dataset['label'] = dataset[forecast_col].shift(-forecast_out)
+print(dataset.head(2))
+print('\n')
+# If we look at the tail, it consists of n(=forecast_out) rows with NAN in Label column 
+print(dataset.tail(2))
+# Define features Matrix X by excluding the label column which we just created 
+import numpy as np
+X = np.array(dataset.drop(['label'], 1))
+
+# Using a feature in sklearn, preposessing to scale features
+X = preprocessing.scale(X)
+print(X[1,:])
+
+X_forecast_out = X[-forecast_out:]
+X = X[:-forecast_out]
+print ("Length of X_forecast_out:", len(X_forecast_out), "& Length of X :", len(X))
+y = np.array(dataset['label'])
+y = y[:-forecast_out]
+print('Length of y: ',len(y))
+
+# Cross validation (split into test and train data)
+# test_size = 0.2 ==> 20% data is test data
+X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size = 0.2)
+
+print('length of X_train and x_test: ', len(X_train), len(X_test))
+
+clf = LinearRegression()
+clf.fit(X_train,y_train)
+# Test
+accuracy = clf.score(X_test, y_test)
+print("Accuracy of Linear Regression: ", accuracy)
+
+forecast_prediction = clf.predict(X_forecast_out)
+print(forecast_prediction)
